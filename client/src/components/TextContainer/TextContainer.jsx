@@ -1,10 +1,11 @@
 import React from 'react'
 import './TextContainer.css';
 
-const TextContainer = () => {
+const TextContainer = ({ message, name }) => {
   return (
-    <div>
-      
+    <div> 
+      {name}
+      {message}
     </div>
   )
 }
