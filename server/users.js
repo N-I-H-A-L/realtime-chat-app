@@ -24,10 +24,10 @@ const removeUser = (id) =>{
 
 const getUser = (id) =>{
     const index = users.findIndex((user)=> user.id==id);
-    console.log(users, index);
+    // console.log(users, index);
     if(index!=-1) return users[index];
     else{
-        console.log('User not found');
+        // console.log('User not found');
         return ;
     }
 }

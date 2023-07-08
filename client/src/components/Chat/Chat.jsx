@@ -5,6 +5,7 @@ import io from "socket.io-client";
 import InfoBar from '../InfoBar/InfoBar.jsx';
 import Input from '../Input/Input.jsx';
 import Messages from '../Messages/Messages.jsx';
+import TextContainer from '../TextContainer/TextContainer.jsx';
 
 import './Chat.css';
 
@@ -20,6 +21,7 @@ const Chat = () => {
   const [message, setMessage] = useState('');
   //'messages' will store all the messages sent till now by the users or admin (server).
   const [messages, setMessages] = useState([]);
+  const [roomData, setRoomData] = useState([]);
 
   useEffect(() => {
     //It will parse the values of 'name' and 'room' from the URL.
@@ -46,6 +48,12 @@ const Chat = () => {
     });
   }, [messages]);
 
+  useEffect(()=>{
+    socket.on('updateRoomData', (users)=>{
+      setRoomData(users);
+    });
+  }, [roomData]);
+
   //This function will handle the event of message is sent by the user.
   const sendMessage = (event) => {
     //to prevent refreshing of page
@@ -56,16 +64,15 @@ const Chat = () => {
       socket.emit('sendMessage', message, () => setMessage(''));
     }
   }
-
-  console.log(messages);
-
+  console.log(roomData);
   return (
     <div className='outerContainer'>
       <div className="container">
         <InfoBar room={room}/>
-        <Messages messages={messages}/>
+        <Messages messages={messages} name={name}/>
         <Input message={message} setMessage={setMessage} sendMessage={sendMessage}/>
       </div>
+      <TextContainer users={roomData}/>
     </div>
   );
 }

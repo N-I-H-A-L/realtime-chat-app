@@ -36,6 +36,9 @@ io.on('connect', (socket) => {
 
     //Emit this message to all the users present in the room except the socket instance itself.
     socket.broadcast.to(user.room).emit('message', {user: 'admin', message: `${user.name} has joined the room!`});
+
+    //update room data for the users present in the user.room.
+    io.to(user.room).emit('updateRoomData', getUsersInRoom(user.room));
   });
 
   //When message is sent from the frontend side.
@@ -43,6 +46,19 @@ io.on('connect', (socket) => {
     const user = getUser(socket.id);
     //Send this message to all the users present in the room.
     if(user) io.in(user.room).emit('message', {user: user.name, message: message});
+  });
+
+  socket.on('disconnect', ()=>{
+    //Delete the current socket instance from the list of users.
+    const user = removeUser(socket.id);
+
+    if(user){
+      //For other users in the room, we'll display, the user has left the chat.
+      io.to(user.room).emit('message', {user: 'admin', message: `${user.name} has left the room.`});
+      
+      //update room data for the users present in the user.room.
+      io.to(user.room).emit('updateRoomData', getUsersInRoom(user.room));
+    }
   });
 });
 
