@@ -1,28 +1,49 @@
 const express = require('express');
-const socket = require('socket.io');
+const { Server } = require('socket.io');
 const http = require('http');
+const cors = require('cors');
+
+const { addUser, removeUser, getUser, getUsersInRoom } = require('./users.js');
 
 const port = process.env.port || 5000;
 
 const app = express();
 const server = http.createServer(app);
-const io = socket(server);
+const io = new Server(server, {
+    cors: {
+        origin: "http://localhost:3000",
+        methods: ["GET", "POST"],
+    },
+});
 
+//On the localhost:5000 it should say, 'Server is up and running'. Because of router.
 const router = require('./router');
-//On the localhost:5000 it should say, 'Server is up and running'. 
+
+app.use(cors());
 app.use(router);
 
-//'connection' is a built in keyword. Whenever a new instance of socket connects to the server, the below event will be fired. 
-io.on('connection', (socket)=>{
-    //We'll manage the socket which just got connected. 
-    console.log(`${socket.id} connected to the server.`);
+io.on('connect', (socket) => {
+  socket.on('join', ({ name, room }, callback) => {
+    const user = addUser({ id: socket.id, name, room });
 
-    //disconnect is a built in event of Socket.io.
-    socket.on('disconnect', ()=>{
-        console.log(`${socket.id} has left.`);
-    })
+    if(user.error) return callback(user.error);
+
+    //Joins the socket instance to the room.
+    socket.join(user.room);
+
+    //Emit this message for current socket instance
+    socket.emit('message', {user: 'admin', message: `Welcome ${user.name} to the room, ${user.room}`});
+
+    //Emit this message to all the users present in the room except the socket instance itself.
+    socket.broadcast.to(user.room).emit('message', {user: 'admin', message: `${user.name} has joined the room!`});
+  });
+
+  //When message is sent from the frontend side.
+  socket.on('sendMessage', (message)=>{
+    const user = getUser(socket.id);
+    //Send this message to all the users present in the room.
+    if(user) io.in(user.room).emit('message', {user: user.name, message: message});
+  });
 });
 
-server.listen(port, ()=>{
-    console.log(`Listening on port ${port}`);
-});
+server.listen(process.env.PORT || 5000, () => console.log(`Server has started.`));
